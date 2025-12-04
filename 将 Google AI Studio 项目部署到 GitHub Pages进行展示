@@ -1,0 +1,61 @@
+# 如何把Google AI Studio 生成的项目展示在Github上？
+
+1. 先在Google AI Studio上生成项目。
+
+2. 在生成的index.html中的`<div id="root"></div>`这一行下边追加`<script type="module" src="/index.tsx"></script>`，并保存
+
+3. 把代码下载到本地，`npm install` 再 `npm run dev`，启动一下看看是不是空白页。
+
+4. 通过按钮将项目保存在GH上，仓库命名是xxx.github.io
+
+5. 去GH上找这个仓库，再点击settings -> Pages -> Build and Deploy 选择Github Actions
+
+6. 把项目克隆到本地，然后在`npm install`一下。
+
+7. 在本地修改`vite.config.ts`，字段`server`上一行加上`base: './'`
+
+8. 新增`./github/workflows/deploy.yml`文件，内容为：
+
+```yaml
+name: Build & Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist   # 构建输出目录（Vite 默认 dist；CRA 用 build）
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/deploy-pages@v4
+
+9.保存再push到仓库上，查看deploy的更新状态。
+
+10.完成后，在GH上打开repo的pages选项，看一下访问url，通过url访问
